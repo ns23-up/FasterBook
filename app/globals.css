@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+/* Цвета бренда задаются один раз здесь. В компонентах используем bg-ink, text-accent и т.д. */
+@theme {
+  --color-ink: #311e16; /* основной фон */
+  --color-ink-deep: #26170f; /* фон боковой панели и нижней навигации */
+  --color-ink-soft: #432e23; /* поверхности карточек */
+  --color-graphite: #2b2a2c;
+  --color-accent: #e97571; /* акцент */
+  --color-accent-hover: #f08a85;
+  --color-cream: #f4ead9; /* основной текст */
+  --color-cream-muted: #bfae98; /* вторичный текст */
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: ui-serif, Georgia, "Times New Roman", serif;
+}
+
+@layer base {
+  html {
+    background-color: #26170f;
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-ink);
+    color: var(--color-cream);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
