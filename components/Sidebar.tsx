@@ -14,7 +14,7 @@ export function Sidebar() {
       <Link href="/" className="flex items-center gap-2.5 px-2 pb-8">
         <BrandIcon className="h-9 w-9" />
         <span className="text-lg font-semibold tracking-tight text-cream">
-          Fast<span className="text-accent">erbook</span>
+          Faster<span className="text-accent">book</span>
         </span>
       </Link>
 

@@ -16,7 +16,7 @@ export default function HomePage() {
       <section className="rounded-3xl border border-white/5 bg-ink-soft/60 p-6 sm:p-8">
         <p className="text-sm text-cream-muted">С возвращением</p>
         <h1 className="mt-2 text-3xl font-semibold leading-tight tracking-tight text-cream sm:text-4xl">
-          Читайте быстрее, <span className="text-accent">не теряя смысла</span>
+          Читай целые книги <span className="text-accent">по одному слову</span>
         </h1>
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-cream-muted">
           Слово за словом в центре экрана. Выберите книгу и задайте свой темп.
