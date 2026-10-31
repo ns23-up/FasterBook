@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { BookCover } from "@/components/BookCover";
 import { DemoBadge } from "@/components/DemoBadge";
 import { Icon } from "@/components/Icon";
-import { ProgressBar, panelClass } from "@/components/ui";
+import { ProgressBar, cardClass } from "@/components/ui";
 import type { DemoBook } from "@/lib/demo-data";
 
 type SortKey = "title" | "progress";
@@ -113,14 +113,14 @@ export function BooksClient({ books, initialQuery = "" }: { books: DemoBook[]; i
           {query.trim() !== "" ? `По запросу «${query}» ничего не найдено.` : "Здесь пока пусто."}
         </div>
       ) : (
-        <ul className={`divide-y divide-white/5 ${panelClass}`}>
+        <ul className={`divide-y divide-white/5 ${cardClass}`}>
           {visible.map((book) => (
             <li key={book.id}>
               <Link
                 href={`/reader/${book.id}`}
-                className="group flex items-center gap-4 p-4 transition-colors first:rounded-t-2xl hover:bg-white/[0.03]"
+                className="group flex items-center gap-4 p-4 transition-colors first:rounded-t-2xl hover:bg-white/[0.04]"
               >
-                <BookCover title={book.title} tone={book.coverTone} />
+                <BookCover title={book.title} tone={book.coverTone} fancy />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-cream">{book.title}</p>
                   <p className="truncate text-xs text-cream-muted">{book.author}</p>

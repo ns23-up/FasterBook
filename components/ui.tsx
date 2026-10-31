@@ -9,6 +9,13 @@ import { Icon, type IconName } from "@/components/Icon";
 /** Стиль карточки из макета: тёмная поверхность с тонкой рамкой. */
 export const panelClass = "rounded-2xl border border-white/5 bg-ink-deep/70";
 
+/**
+ * Более объёмная карточка: светлая кромка сверху, мягкая тень и тонкая внутренняя рамка.
+ * Используется на главной, в «Моих книгах» и «Друзьях».
+ */
+export const cardClass =
+  "rounded-2xl border border-white/[0.07] bg-ink-deep/80 shadow-[0_14px_30px_-18px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.05)]";
+
 export function SectionTitle({
   id,
   title,

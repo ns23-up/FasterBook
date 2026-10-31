@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Icon } from "@/components/Icon";
-import { Avatar, panelClass } from "@/components/ui";
+import { Avatar, cardClass } from "@/components/ui";
 import type { DemoFriend } from "@/lib/demo-data";
 
 /**
@@ -81,7 +81,7 @@ function FriendGroup({
   return (
     <section>
       <h2 className="mb-3 text-sm font-semibold text-cream-muted">{title}</h2>
-      <ul className={`divide-y divide-white/5 ${panelClass}`}>
+      <ul className={`divide-y divide-white/5 ${cardClass}`}>
         {friends.map((friend) => {
           const isFollowed = followed.has(friend.id);
           return (

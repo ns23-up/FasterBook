@@ -15,7 +15,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-white/5 bg-ink-deep px-4 py-6 md:flex">
+    <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-white/5 bg-ink-deep px-4 py-6 shadow-[8px_0_24px_-12px_rgba(0,0,0,0.6)] md:flex">
       <Link href="/" className="flex items-center gap-2.5 px-2 pb-8">
         <BrandIcon className="h-9 w-9" />
         <span className="text-lg font-semibold tracking-tight text-cream">
@@ -55,10 +55,15 @@ function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
     <Link
       href={item.href}
       aria-current={active ? "page" : undefined}
-      className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-        active ? "bg-ink-soft text-cream" : "text-cream-muted hover:bg-white/5 hover:text-cream"
+      className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+        active
+          ? "bg-ink-soft text-cream shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+          : "text-cream-muted hover:bg-white/5 hover:text-cream"
       }`}
     >
+      {active ? (
+        <span aria-hidden="true" className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-accent" />
+      ) : null}
       <Icon name={item.icon} className={`h-5 w-5 ${active ? "text-accent" : ""}`} />
       {item.label}
     </Link>
