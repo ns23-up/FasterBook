@@ -32,7 +32,7 @@ export function TopBar() {
               type="search"
               name="q"
               placeholder="Поиск книг, авторов…"
-              className="w-full rounded-xl border border-white/5 bg-ink-deep/70 py-2.5 pl-10 pr-4 text-sm text-cream placeholder:text-cream-muted/70 focus:border-accent/40 focus:outline-none"
+              className="w-full rounded-xl border border-white/[0.07] bg-ink-deep/80 py-2.5 shadow-[inset_0_1px_3px_rgba(0,0,0,0.35)] pl-10 pr-4 text-sm text-cream placeholder:text-cream-muted/70 focus:border-accent/40 focus:outline-none"
             />
           </label>
         </form>
