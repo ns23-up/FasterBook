@@ -16,3 +16,6 @@ npm-debug.log*
 # env files (secrets never go to git)
 .env*.local
 .env
+
+# typescript
+*.tsbuildinfo

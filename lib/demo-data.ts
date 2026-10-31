@@ -77,6 +77,8 @@ export const DEMO_FRIENDS: DemoFriend[] = [
   { id: "f1", name: "Артём", nowReading: "Дорога через перевал", online: true },
   { id: "f2", name: "Настя", nowReading: "Заметки о тишине", online: true },
   { id: "f3", name: "Максим", nowReading: "Письма без адреса", online: false },
+  { id: "f4", name: "Лера", nowReading: "Дорога через перевал", online: true },
+  { id: "f5", name: "Данил", nowReading: "Заметки о тишине", online: false },
 ];
 
 export function findDemoBook(id: string): DemoBook | undefined {

@@ -1,14 +1,20 @@
 import type { CoverTone } from "@/lib/demo-data";
 
 const TONE_CLASSES: Record<CoverTone, string> = {
-  accent: "from-[#7a3b2e] to-[#311e16] text-accent",
-  graphite: "from-[#3c3b3f] to-[#1f1e20] text-cream",
-  cream: "from-[#8a7660] to-[#4a3a2c] text-cream",
+  accent: "bg-cover-ember text-accent",
+  graphite: "bg-cover-slate text-cream",
+  cream: "bg-cover-sand text-cream",
 };
+
+const SIZE_CLASSES = {
+  sm: "h-14 w-10 text-lg",
+  md: "h-20 w-14 text-2xl",
+  lg: "h-28 w-20 text-4xl",
+} as const;
 
 /**
  * Обложка-заглушка. Настоящие обложки появятся вместе с загрузкой книг.
- * Здесь нет чужих изображений, только простой цветной блок с первой буквой.
+ * Здесь нет чужих изображений: однотонный блок, корешок и первая буква названия.
  */
 export function BookCover({
   title,
@@ -17,15 +23,18 @@ export function BookCover({
 }: {
   title: string;
   tone: CoverTone;
-  size?: "sm" | "md";
+  size?: keyof typeof SIZE_CLASSES;
 }) {
-  const sizeClass = size === "sm" ? "h-14 w-10 text-base" : "h-20 w-14 text-xl";
   return (
     <div
       aria-hidden="true"
-      className={`flex shrink-0 items-center justify-center rounded-md bg-linear-to-b font-serif font-semibold shadow-sm ring-1 ring-white/10 ${sizeClass} ${TONE_CLASSES[tone]}`}
+      className={`relative flex shrink-0 flex-col justify-between overflow-hidden rounded-md py-2 pl-3 pr-2 shadow-md shadow-black/30 ring-1 ring-white/10 ${SIZE_CLASSES[size]} ${TONE_CLASSES[tone]}`}
     >
-      {title.charAt(0)}
+      {/* Корешок */}
+      <span className="absolute inset-y-0 left-0 w-1.5 bg-black/25" />
+      <span className="h-px w-2/3 bg-current opacity-40" />
+      <span className="self-center font-playfair font-semibold leading-none">{title.charAt(0)}</span>
+      <span className="h-px w-1/3 self-end bg-current opacity-40" />
     </div>
   );
 }

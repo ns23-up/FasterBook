@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Icon } from "@/components/Icon";
 import { NAV_ITEMS, isActivePath } from "@/lib/navigation";
 
 /** Нижняя навигация для телефона (до 768 px). На ПК скрыта. */
@@ -21,14 +22,11 @@ export function BottomNav() {
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[11px] font-medium ${
+                className={`flex min-h-16 flex-col items-center justify-center gap-1 px-1 py-2 text-[11px] font-medium ${
                   active ? "text-accent" : "text-cream-muted"
                 }`}
               >
-                <span
-                  aria-hidden="true"
-                  className={`mb-0.5 h-1 w-6 rounded-full ${active ? "bg-accent" : "bg-transparent"}`}
-                />
+                <Icon name={item.icon} className="h-5 w-5" />
                 {item.label}
               </Link>
             </li>

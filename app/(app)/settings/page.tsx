@@ -8,7 +8,7 @@ export default function SettingsPage() {
     <>
       <PageHeader
         title="Настройки"
-        description="Скорость и шрифт сохраняются в этом браузере и применяются в читалке."
+        description="Скорость, шрифт и цвета применяются в читалке. Справа видно, как это будет выглядеть."
       />
       <SettingsClient />
     </>

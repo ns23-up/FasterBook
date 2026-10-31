@@ -1,15 +1,18 @@
+import type { IconName } from "@/components/Icon";
+
 export interface NavItem {
   href: string;
   label: string;
+  icon: IconName;
 }
 
 /** Единый список разделов: используется и боковой панелью, и нижней навигацией. */
 export const NAV_ITEMS: NavItem[] = [
-  { href: "/", label: "Главная" },
-  { href: "/books", label: "Мои книги" },
-  { href: "/favorites", label: "Избранное" },
-  { href: "/friends", label: "Друзья" },
-  { href: "/settings", label: "Настройки" },
+  { href: "/", icon: "home", label: "Главная" },
+  { href: "/books", icon: "books", label: "Мои книги" },
+  { href: "/favorites", icon: "heart", label: "Избранное" },
+  { href: "/friends", icon: "friends", label: "Друзья" },
+  { href: "/settings", icon: "settings", label: "Настройки" },
 ];
 
 /** Активен ли пункт для текущего пути. Главная активна только на точном совпадении. */

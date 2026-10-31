@@ -29,6 +29,7 @@ export default async function ReaderPage({ params }: ReaderPageProps) {
   return (
     <ReaderClient
       title={book.title}
+      author={book.author}
       words={words}
       startIndex={startIndex}
       isDemo
