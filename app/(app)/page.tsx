@@ -20,7 +20,6 @@ export default function HomePage() {
   // Настоящей статистики пока нет: считать слова и дни начнём вместе с загрузкой книг.
   // Поэтому там, где данных нет, честно стоит «—».
   const stats: { icon: IconName; label: string; value: string; hint?: string }[] = [
-    { icon: "note", label: "Прочитано слов", value: "—", hint: "Пока не считается" },
     { icon: "clock", label: "Дней подряд", value: "—", hint: "Пока не считается" },
     { icon: "books", label: "Книг в библиотеке", value: String(DEMO_BOOKS.length), hint: "Демо-список" },
     { icon: "friends", label: "Друзей", value: String(DEMO_FRIENDS.length), hint: "Демо-профили" },
@@ -67,7 +66,7 @@ export default function HomePage() {
           </p>
 
           {/* Плитки статистики */}
-          <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <ul className="grid gap-3 sm:grid-cols-3">
             {stats.map((stat) => (
               <li
                 key={stat.label}

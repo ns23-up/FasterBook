@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { WordView } from "@/components/WordView";
 import { Chip, RangeSlider, Toggle, panelClass } from "@/components/ui";
-import { MAX_WPM, MIN_WPM, WPM_STEP } from "@/lib/reader";
+import { CHUNK_SIZES, MAX_WPM, MIN_WPM, WPM_STEP } from "@/lib/reader";
 import {
   BACKGROUND_OPTIONS,
   DEFAULT_SETTINGS,
@@ -68,6 +68,19 @@ export function SettingsClient() {
             <span>{MIN_WPM}</span>
             <span>{MAX_WPM}</span>
           </div>
+        </Field>
+
+        <Field label="Слов за раз">
+          <div role="radiogroup" aria-label="Слов за раз" className="grid grid-cols-3 gap-2">
+            {CHUNK_SIZES.map((size) => (
+              <Chip key={size} selected={draft.chunkSize === size} onClick={() => update({ chunkSize: size })}>
+                {size}
+              </Chip>
+            ))}
+          </div>
+          <p className="mt-2 text-xs text-cream-muted">
+            Предлоги и союзы всегда показываются вместе со словом: «и пришёл», «в доме».
+          </p>
         </Field>
 
         <Field label="Шрифт">

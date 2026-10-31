@@ -1,12 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DemoBadge } from "@/components/DemoBadge";
 import { Icon } from "@/components/Icon";
 import { WordView } from "@/components/WordView";
 import { Chip, RangeSlider } from "@/components/ui";
-import { MAX_WPM, MIN_WPM, WPM_STEP, clampWpm, wordDelayMs } from "@/lib/reader";
+import {
+  CHUNK_SIZES,
+  MAX_WPM,
+  MIN_WPM,
+  WPM_STEP,
+  buildChunks,
+  chunkIndexAt,
+  clampWpm,
+  wordDelayMs,
+} from "@/lib/reader";
 import {
   DEFAULT_SETTINGS,
   FONT_OPTIONS,
@@ -22,14 +31,19 @@ interface ReaderClientProps {
   words: string[];
   startIndex: number;
   isDemo: boolean;
+  /** Вызывается, чтобы сохранить позицию (номер слова). Для демо-книг не передаётся. */
+  onProgress?: (index: number) => void;
 }
 
 /**
- * Читалка: показывает одно слово по центру и переключает его таймером.
- * Таймер — цепочка setTimeout: задержка считается под каждое слово,
+ * Читалка: показывает по центру кадр из 1–3 слов и переключает его таймером.
+ * Таймер — цепочка setTimeout: задержка считается под каждый кадр,
  * а пауза просто останавливает цепочку.
+ *
+ * Позиция (index) — это номер СЛОВА, а не кадра. Поэтому при смене «слов за раз»
+ * место в книге не сбивается, а сохранённый прогресс одинаков для любого режима.
  */
-export function ReaderClient({ title, author, words, startIndex, isDemo }: ReaderClientProps) {
+export function ReaderClient({ title, author, words, startIndex, isDemo, onProgress }: ReaderClientProps) {
   const [index, setIndex] = useState(() => clampIndex(startIndex, words.length));
   const [playing, setPlaying] = useState(false);
   const [settings, setSettings] = useState<ReaderSettings>(DEFAULT_SETTINGS);
@@ -39,8 +53,13 @@ export function ReaderClient({ title, author, words, startIndex, isDemo }: Reade
   const [fullscreen, setFullscreen] = useState(false);
 
   const lastIndex = Math.max(words.length - 1, 0);
-  const word = words[index] ?? "";
   const wpm = settings.wpm;
+
+  // Кадры пересчитываются только при смене текста или режима «слов за раз»
+  const chunks = useMemo(() => buildChunks(words, settings.chunkSize), [words, settings.chunkSize]);
+  const chunkIdx = chunkIndexAt(chunks, index);
+  const lastChunk = Math.max(chunks.length - 1, 0);
+  const word = chunks[chunkIdx]?.text ?? "";
   // Панели прячутся, если фокус включён вручную или если в настройках включён режим фокуса и идёт чтение
   const hideUi = manualFocus || (settings.focusMode && playing);
 
@@ -49,21 +68,53 @@ export function ReaderClient({ title, author, words, startIndex, isDemo }: Reade
     setSettings(loadSettings());
   }, []);
 
-  // Таймер: показываем следующее слово через задержку, рассчитанную под текущее слово
+  // Таймер: показываем следующий кадр через задержку, рассчитанную под текущий кадр
   useEffect(() => {
-    if (!playing || words.length === 0) {
+    if (!playing || chunks.length === 0) {
       return;
     }
-    if (index >= lastIndex) {
+    if (chunkIdx >= lastChunk) {
       setPlaying(false);
       return;
     }
     const timer = window.setTimeout(() => {
-      setIndex((current) => Math.min(current + 1, lastIndex));
+      setIndex(chunks[chunkIdx + 1].start);
     }, wordDelayMs(word, wpm));
 
     return () => window.clearTimeout(timer);
-  }, [playing, index, wpm, word, lastIndex, words.length]);
+  }, [playing, chunkIdx, chunks, lastChunk, wpm, word]);
+
+  // Сохранение позиции. Не на каждом слове (это десятки записей в секунду),
+  // а раз в 2 секунды, при паузе, при переходе по тексту и при закрытии страницы.
+  const indexRef = useRef(index);
+  const savedIndexRef = useRef(index);
+  indexRef.current = index;
+
+  const flushProgress = useCallback(() => {
+    if (onProgress && indexRef.current !== savedIndexRef.current) {
+      savedIndexRef.current = indexRef.current;
+      onProgress(indexRef.current);
+    }
+  }, [onProgress]);
+
+  useEffect(() => {
+    if (!onProgress) {
+      return;
+    }
+    const timer = window.setInterval(flushProgress, 2000);
+    window.addEventListener("pagehide", flushProgress);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("pagehide", flushProgress);
+      flushProgress();
+    };
+  }, [flushProgress, onProgress]);
+
+  useEffect(() => {
+    if (!playing) {
+      flushProgress();
+    }
+  }, [playing, index, flushProgress]);
 
   /** Меняет настройку и сразу сохраняет её в браузере */
   const updateSettings = useCallback((patch: Partial<ReaderSettings>) => {
@@ -86,16 +137,25 @@ export function ReaderClient({ title, author, words, startIndex, isDemo }: Reade
     [words.length],
   );
 
+  /** Перейти на кадр вперёд (+1) или назад (−1) */
+  const step = useCallback(
+    (delta: number) => {
+      const target = Math.min(Math.max(chunkIdx + delta, 0), lastChunk);
+      setIndex(chunks[target]?.start ?? 0);
+    },
+    [chunkIdx, chunks, lastChunk],
+  );
+
   const togglePlay = useCallback(() => {
     if (words.length === 0) {
       return;
     }
     // Если дошли до конца, начинаем сначала
-    if (!playing && index >= lastIndex) {
+    if (!playing && chunkIdx >= lastChunk) {
       setIndex(0);
     }
     setPlaying((value) => !value);
-  }, [index, lastIndex, playing, words.length]);
+  }, [chunkIdx, lastChunk, playing, words.length]);
 
   // Клавиатура: пробел — пауза, стрелки — переход и скорость, Esc — выход из фокуса
   useEffect(() => {
@@ -109,10 +169,10 @@ export function ReaderClient({ title, author, words, startIndex, isDemo }: Reade
           togglePlay();
           break;
         case "ArrowRight":
-          seek(index + 1);
+          step(1);
           break;
         case "ArrowLeft":
-          seek(index - 1);
+          step(-1);
           break;
         case "ArrowUp":
           event.preventDefault();
@@ -130,7 +190,7 @@ export function ReaderClient({ title, author, words, startIndex, isDemo }: Reade
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [changeSpeed, index, seek, togglePlay, wpm]);
+  }, [changeSpeed, step, togglePlay, wpm]);
 
   // Следим за полноэкранным режимом, чтобы кнопка показывала правильное состояние
   useEffect(() => {
@@ -227,7 +287,7 @@ export function ReaderClient({ title, author, words, startIndex, isDemo }: Reade
                 <span>
                   {index + 1} / {words.length}
                 </span>
-                <span>{wpm} слов/мин</span>
+                <span>{progressPercent}%</span>
               </div>
               <RangeSlider
                 label="Позиция в тексте"
@@ -244,7 +304,7 @@ export function ReaderClient({ title, author, words, startIndex, isDemo }: Reade
 
           {/* Управление */}
           <div className="flex items-center justify-center gap-5 sm:gap-8">
-            <ControlButton label="Пред." onClick={() => seek(index - 1)} icon="skipBack" />
+            <ControlButton label="Пред." onClick={() => step(-1)} icon="skipBack" />
             <button
               type="button"
               onClick={togglePlay}
@@ -253,7 +313,31 @@ export function ReaderClient({ title, author, words, startIndex, isDemo }: Reade
             >
               <Icon name={playing ? "pause" : "play"} className="h-7 w-7" />
             </button>
-            <ControlButton label="След." onClick={() => seek(index + 1)} icon="skipForward" />
+            <ControlButton label="След." onClick={() => step(1)} icon="skipForward" />
+          </div>
+
+          {/* Скорость: прямо под рукой, можно менять на ходу, не останавливая чтение */}
+          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-3 py-2.5">
+            <SpeedButton label="Медленнее" onClick={() => changeSpeed(wpm - WPM_STEP)} disabled={wpm <= MIN_WPM}>
+              −
+            </SpeedButton>
+            <div className="flex-1">
+              <RangeSlider
+                label="Скорость, слов в минуту"
+                min={MIN_WPM}
+                max={MAX_WPM}
+                step={WPM_STEP}
+                value={wpm}
+                onChange={changeSpeed}
+              />
+            </div>
+            <SpeedButton label="Быстрее" onClick={() => changeSpeed(wpm + WPM_STEP)} disabled={wpm >= MAX_WPM}>
+              +
+            </SpeedButton>
+            <p className="w-20 shrink-0 text-right text-sm font-semibold tabular-nums text-cream">
+              {wpm}
+              <span className="block text-[10px] font-normal text-cream-muted">слов/мин</span>
+            </p>
           </div>
 
           <div className="flex justify-center">
@@ -274,22 +358,19 @@ export function ReaderClient({ title, author, words, startIndex, isDemo }: Reade
           {panelOpen ? (
             <section aria-label="Настройки чтения" className="flex flex-col gap-5 rounded-2xl border border-white/10 bg-black/20 p-5">
               <div>
-                <div className="mb-2 flex justify-between text-sm">
-                  <span className="text-cream">Скорость чтения</span>
-                  <span className="tabular-nums text-cream-muted">{wpm} слов/мин</span>
+                <p className="mb-2 text-sm text-cream">Слов за раз</p>
+                <div role="radiogroup" aria-label="Слов за раз" className="grid grid-cols-3 gap-2">
+                  {CHUNK_SIZES.map((size) => (
+                    <Chip
+                      key={size}
+                      selected={settings.chunkSize === size}
+                      onClick={() => updateSettings({ chunkSize: size })}
+                    >
+                      {size}
+                    </Chip>
+                  ))}
                 </div>
-                <RangeSlider
-                  label="Скорость, слов в минуту"
-                  min={MIN_WPM}
-                  max={MAX_WPM}
-                  step={WPM_STEP}
-                  value={wpm}
-                  onChange={changeSpeed}
-                />
-                <div className="mt-1 flex justify-between text-xs text-cream-muted">
-                  <span>{MIN_WPM}</span>
-                  <span>{MAX_WPM}</span>
-                </div>
+                <p className="mt-2 text-xs text-cream-muted">Предлоги и союзы всегда показываются вместе со словом.</p>
               </div>
               <div>
                 <p className="mb-2 text-sm text-cream">Шрифт</p>
@@ -313,7 +394,7 @@ export function ReaderClient({ title, author, words, startIndex, isDemo }: Reade
           ) : null}
 
           <p className="hidden text-center text-xs text-cream-muted/70 md:block">
-            Пробел — пауза · ← → — слово · ↑ ↓ — скорость
+            Пробел — пауза · ← → — назад / вперёд · ↑ ↓ — скорость
           </p>
         </footer>
       )}
@@ -355,6 +436,31 @@ function HeaderButton({
   );
 }
 
+function SpeedButton({
+  label,
+  onClick,
+  disabled,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      title={label}
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 text-lg leading-none text-cream transition-colors hover:bg-white/5 disabled:opacity-40"
+    >
+      {children}
+    </button>
+  );
+}
+
 function ControlButton({
   label,
   onClick,
@@ -368,7 +474,7 @@ function ControlButton({
     <button
       type="button"
       onClick={onClick}
-      aria-label={icon === "skipBack" ? "Слово назад" : "Слово вперёд"}
+      aria-label={icon === "skipBack" ? "Назад" : "Вперёд"}
       className="flex flex-col items-center gap-1 text-cream-muted transition-colors hover:text-cream"
     >
       <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10">

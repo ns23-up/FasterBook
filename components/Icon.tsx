@@ -26,6 +26,7 @@ const ICONS = {
   clock: "M12 21a9 9 0 110-18 9 9 0 010 18zM12 7v5l3 2",
   upload: "M12 16V4M7 9l5-5 5 5M5 20h14",
   plus: "M12 5v14M5 12h14",
+  trash: "M4 7h16M10 11v6M14 11v6M6 7l1 12a1 1 0 001 1h8a1 1 0 001-1l1-12M9 7V4h6v3",
   user: "M12 12a4 4 0 100-8 4 4 0 000 8zM4 21a8 8 0 0116 0",
   fullscreen: "M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5",
   sliders: "M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4",
