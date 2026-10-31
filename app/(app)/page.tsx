@@ -1,174 +1,170 @@
 import Link from "next/link";
 import { BookCover } from "@/components/BookCover";
 import { DemoBadge } from "@/components/DemoBadge";
-import { DEMO_BOOKS, DEMO_FRIENDS, DEMO_QUOTES } from "@/lib/demo-data";
+import { Icon, type IconName } from "@/components/Icon";
+import { MountainArt } from "@/components/MountainArt";
+import { Avatar, IconTile, ProgressBar, SectionTitle, panelClass } from "@/components/ui";
+import { DEMO_BOOKS, DEMO_FRIENDS } from "@/lib/demo-data";
 
 export const metadata = { title: "Главная" };
 
+const FEATURES: { icon: IconName; title: string; text: string }[] = [
+  { icon: "speed", title: "Быстрое чтение", text: "Читай по одному слову" },
+  { icon: "bookmark", title: "Сохранение прогресса", text: "Продолжай с любого места" },
+  { icon: "device", title: "Всегда с тобой", text: "На компьютере и телефоне" },
+];
+
+const STEPS = [
+  { title: "Загрузите книгу", text: "Файл в формате TXT. Загрузка появится на следующем этапе." },
+  { title: "Выберите скорость", text: "Комфортный темп — от 100 до 1000 слов в минуту." },
+  { title: "Наслаждайтесь", text: "Слова появляются по одному в центре экрана." },
+];
+
 export default function HomePage() {
-  const current = DEMO_BOOKS[0];
-  const favoriteBooks = DEMO_BOOKS.slice(1);
-  const favoriteQuotes = DEMO_QUOTES.slice(0, 2);
+  const onlineFriends = DEMO_FRIENDS.filter((friend) => friend.online);
 
   return (
-    <div className="flex flex-col gap-8 md:gap-10">
-      {/* Приветствие */}
-      <section className="rounded-3xl border border-white/5 bg-ink-soft/60 p-6 sm:p-8">
-        <p className="text-sm text-cream-muted">С возвращением</p>
-        <h1 className="mt-2 text-3xl font-semibold leading-tight tracking-tight text-cream sm:text-4xl">
-          Читай целые книги <span className="text-accent">по одному слову</span>
-        </h1>
-        <p className="mt-3 max-w-xl text-sm leading-relaxed text-cream-muted">
-          Слово за словом в центре экрана. Выберите книгу и задайте свой темп.
-        </p>
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <Link
-            href={`/reader/${current.id}`}
-            className="inline-flex items-center justify-center rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-accent-hover"
-          >
-            Продолжить чтение
-          </Link>
-          <Link
-            href="/books"
-            className="inline-flex items-center justify-center rounded-xl border border-white/10 px-5 py-3 text-sm font-medium text-cream transition-colors hover:bg-white/5"
-          >
-            Мои книги
-          </Link>
-        </div>
-      </section>
-
-      {/* Продолжить чтение */}
-      <section aria-labelledby="continue-title">
-        <SectionTitle id="continue-title" title="Продолжить чтение" badge />
-        <Link
-          href={`/reader/${current.id}`}
-          className="group mt-4 flex items-center gap-5 rounded-2xl border border-white/5 bg-ink-soft/50 p-5 transition-colors hover:border-accent/30"
-        >
-          <BookCover title={current.title} tone={current.coverTone} />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-base font-semibold text-cream">{current.title}</p>
-            <p className="text-sm text-cream-muted">{current.author}</p>
-            <ProgressBar value={current.progress} className="mt-4" />
-            <p className="mt-2 text-xs text-cream-muted">Прочитано {current.progress}%</p>
+    <div className="flex flex-col gap-8">
+      {/* Главный баннер */}
+      <section className="relative overflow-hidden rounded-3xl border border-white/5 bg-ink-deep">
+        {/* Маска плавно растворяет левый край гор, чтобы не было резкого обреза */}
+        <MountainArt className="absolute inset-x-0 bottom-0 h-40 w-full opacity-60 md:inset-y-0 md:left-auto md:right-0 md:h-full md:w-3/5 md:opacity-100 md:[mask-image:linear-gradient(to_right,transparent,black_40%)]" />
+        <div className="relative z-10 flex flex-col gap-5 p-6 pb-40 sm:p-10 sm:pb-44 md:max-w-lg md:pb-10">
+          <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-cream sm:text-5xl">
+            Читай быстрее.
+            <br />
+            <span className="text-accent">Живи ярче.</span>
+          </h1>
+          <p className="text-sm leading-relaxed text-cream-muted">
+            Fasterbook — это не просто чтение.
+            <br />
+            Это новый способ воспринимать мир.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/books"
+              className="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-accent-hover"
+            >
+              <Icon name="upload" className="h-4 w-4" />
+              Загрузить книгу
+            </Link>
+            <a
+              href="#how"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-5 py-3 text-sm font-medium text-cream transition-colors hover:bg-white/5"
+            >
+              <Icon name="play" className="h-4 w-4" />
+              Как это работает
+            </a>
           </div>
-          <span className="hidden rounded-full bg-accent px-4 py-2 text-sm font-semibold text-ink transition-transform group-hover:scale-[1.03] sm:inline-block">
-            Открыть
-          </span>
-        </Link>
-      </section>
-
-      {/* Статистика */}
-      <section aria-labelledby="stats-title">
-        <SectionTitle id="stats-title" title="Статистика" badge />
-        <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <StatCard label="Серия дней" value="—" hint="Появится с этапа 5" />
-          <StatCard label="Слов за неделю" value="—" hint="По реальным сессиям" />
-          <StatCard label="Книг в библиотеке" value={String(DEMO_BOOKS.length)} hint="Демо-список" />
-          <StatCard label="Время в читалке" value="—" hint="Пока не считается" />
         </div>
       </section>
 
-      <div className="grid gap-8 md:grid-cols-2">
-        {/* Избранное */}
-        <section aria-labelledby="fav-title">
-          <SectionTitle id="fav-title" title="Избранное" badge />
-          <ul className="mt-4 flex flex-col gap-3">
-            {favoriteBooks.map((book) => (
+      {/* Возможности */}
+      <section aria-label="Возможности" className="grid gap-3 sm:grid-cols-3">
+        {FEATURES.map((feature) => (
+          <div key={feature.title} className={`flex items-center gap-4 p-4 ${panelClass}`}>
+            <IconTile name={feature.icon} />
+            <div>
+              <p className="text-sm font-medium text-cream">{feature.title}</p>
+              <p className="text-xs text-cream-muted">{feature.text}</p>
+            </div>
+          </div>
+        ))}
+      </section>
+
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_17rem]">
+        {/* Продолжить чтение */}
+        <section aria-labelledby="continue-title">
+          <SectionTitle
+            id="continue-title"
+            title="Продолжить чтение"
+            badge
+            action={
+              <Link href="/books" className="flex items-center gap-1 text-xs text-cream-muted hover:text-cream">
+                Все книги <Icon name="chevron" className="h-3.5 w-3.5" />
+              </Link>
+            }
+          />
+          <ul className="mt-4 grid gap-3 sm:grid-cols-3">
+            {DEMO_BOOKS.map((book) => (
               <li key={book.id}>
                 <Link
                   href={`/reader/${book.id}`}
-                  className="flex items-center gap-4 rounded-2xl border border-white/5 bg-ink-soft/50 p-4 transition-colors hover:border-accent/30"
+                  className={`group flex h-full gap-4 p-4 transition-colors hover:border-accent/30 sm:flex-col ${panelClass}`}
                 >
-                  <BookCover title={book.title} tone={book.coverTone} size="sm" />
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-cream">{book.title}</p>
-                    <p className="text-xs text-cream-muted">{book.author}</p>
+                  <BookCover title={book.title} tone={book.coverTone} size="lg" />
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <p className="text-sm font-semibold leading-snug text-cream">{book.title}</p>
+                    <p className="mt-0.5 truncate text-xs text-cream-muted">{book.author}</p>
+                    <div className="mt-auto flex items-center gap-3 pt-4">
+                      <div className="flex-1">
+                        <p className="mb-1.5 text-xs tabular-nums text-cream-muted">{book.progress}%</p>
+                        <ProgressBar value={book.progress} />
+                      </div>
+                      <span
+                        aria-hidden="true"
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-ink transition-transform group-hover:scale-105"
+                      >
+                        <Icon name="play" className="h-4 w-4" />
+                      </span>
+                    </div>
                   </div>
                 </Link>
               </li>
             ))}
-            {favoriteQuotes.map((quote) => (
-              <li
-                key={quote.id}
-                className="rounded-2xl border border-white/5 bg-white/[0.02] p-4 text-sm italic leading-relaxed text-cream-muted"
-              >
-                «{quote.text}»
-              </li>
-            ))}
           </ul>
         </section>
 
-        {/* Друзья */}
-        <section aria-labelledby="friends-title">
-          <SectionTitle id="friends-title" title="Друзья сейчас читают" badge />
-          <ul className="mt-4 flex flex-col divide-y divide-white/5 rounded-2xl border border-white/5 bg-ink-soft/50">
-            {DEMO_FRIENDS.map((friend) => (
-              <li key={friend.id} className="flex items-center gap-3 px-4 py-3">
-                <span
-                  aria-hidden="true"
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-graphite text-sm font-semibold text-cream"
-                >
-                  {friend.name.charAt(0)}
-                </span>
-                <div className="min-w-0 flex-1">
+        {/* Друзья онлайн */}
+        <section aria-labelledby="friends-title" className={`self-start p-4 ${panelClass}`}>
+          <div className="flex items-center justify-between gap-2">
+            <h2 id="friends-title" className="text-sm font-semibold text-cream">
+              Друзья онлайн
+            </h2>
+            <DemoBadge />
+          </div>
+          <ul className="mt-4 flex flex-col gap-4">
+            {onlineFriends.map((friend) => (
+              <li key={friend.id} className="flex items-center gap-3">
+                <Avatar name={friend.name} online />
+                <div className="min-w-0">
                   <p className="text-sm font-medium text-cream">{friend.name}</p>
                   <p className="truncate text-xs text-cream-muted">Читает «{friend.nowReading}»</p>
                 </div>
-                <span
-                  aria-label={friend.online ? "В сети" : "Не в сети"}
-                  className={`h-2 w-2 rounded-full ${friend.online ? "bg-accent" : "bg-cream-muted/40"}`}
-                />
               </li>
             ))}
           </ul>
+          <Link
+            href="/friends"
+            className="mt-5 flex items-center justify-center gap-1 rounded-xl border border-white/10 py-2 text-xs font-medium text-cream-muted transition-colors hover:bg-white/5 hover:text-cream"
+          >
+            Все друзья <Icon name="chevron" className="h-3.5 w-3.5" />
+          </Link>
         </section>
       </div>
 
-      {/* Рекомендации: честная заглушка до появления реальной логики */}
-      <section aria-labelledby="rec-title" className="rounded-2xl border border-dashed border-white/10 p-5">
-        <div className="flex items-center justify-between gap-3">
-          <h2 id="rec-title" className="text-base font-semibold text-cream">Рекомендации</h2>
-          <DemoBadge />
-        </div>
-        <p className="mt-2 text-sm leading-relaxed text-cream-muted">
-          Рекомендации будут строиться по вашим книгам и избранному. Пока этот блок пустой, чтобы не показывать выдуманные советы как настоящие.
-        </p>
+      {/* Как это работает */}
+      <section id="how" aria-labelledby="how-title" className={`scroll-mt-24 p-6 sm:p-8 ${panelClass}`}>
+        <h2 id="how-title" className="text-lg font-semibold tracking-tight text-cream">
+          Как это работает?
+        </h2>
+        <ol className="mt-5 grid gap-5 sm:grid-cols-3">
+          {STEPS.map((step, index) => (
+            <li key={step.title} className="flex gap-4">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-ink">
+                {index + 1}
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-cream">{step.title}</p>
+                <p className="mt-1 text-xs leading-relaxed text-cream-muted">{step.text}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <blockquote className="mt-8 border-l-2 border-accent pl-4 font-playfair text-sm italic leading-relaxed text-cream-muted">
+          «Книга — это не просто текст, это другой мир, в который ты можешь войти в любое время.»
+        </blockquote>
       </section>
-    </div>
-  );
-}
-
-function SectionTitle({ id, title, badge }: { id: string; title: string; badge?: boolean }) {
-  return (
-    <div className="flex items-center gap-3">
-      <h2 id={id} className="text-lg font-semibold tracking-tight text-cream">
-        {title}
-      </h2>
-      {badge ? <DemoBadge /> : null}
-    </div>
-  );
-}
-
-function ProgressBar({ value, className = "" }: { value: number; className?: string }) {
-  return (
-    <div
-      role="progressbar"
-      aria-valuenow={value}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      className={`h-1.5 w-full overflow-hidden rounded-full bg-white/10 ${className}`}
-    >
-      <div className="h-full rounded-full bg-accent" style={{ width: `${value}%` }} />
-    </div>
-  );
-}
-
-function StatCard({ label, value, hint }: { label: string; value: string; hint: string }) {
-  return (
-    <div className="rounded-2xl border border-white/5 bg-ink-soft/50 p-4">
-      <p className="text-xs text-cream-muted">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-cream">{value}</p>
-      <p className="mt-1 text-[11px] leading-snug text-cream-muted/80">{hint}</p>
     </div>
   );
 }

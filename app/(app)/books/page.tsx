@@ -1,17 +1,17 @@
 import { BooksClient } from "@/components/BooksClient";
-import { PageHeader } from "@/components/PageHeader";
 import { DEMO_BOOKS } from "@/lib/demo-data";
 
 export const metadata = { title: "Мои книги" };
 
-export default function BooksPage() {
-  return (
-    <>
-      <PageHeader
-        title="Мои книги"
-        description="Поиск и сортировка работают на демо-списке. Загрузка своих файлов появится на этапе 2."
-      />
-      <BooksClient books={DEMO_BOOKS} />
-    </>
-  );
+interface BooksPageProps {
+  /** ?q=... приходит из строки поиска в верхней панели */
+  searchParams: Promise<{ q?: string | string[] }>;
+}
+
+export default async function BooksPage({ searchParams }: BooksPageProps) {
+  const { q } = await searchParams;
+  const initialQuery = typeof q === "string" ? q : "";
+
+  // key сбрасывает поле поиска, когда запрос в адресе меняется
+  return <BooksClient key={initialQuery} books={DEMO_BOOKS} initialQuery={initialQuery} />;
 }

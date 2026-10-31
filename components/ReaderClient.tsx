@@ -3,23 +3,22 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { DemoBadge } from "@/components/DemoBadge";
-import {
-  MAX_WPM,
-  MIN_WPM,
-  WPM_STEP,
-  clampWpm,
-  pivotIndex,
-  wordDelayMs,
-} from "@/lib/reader";
+import { Icon } from "@/components/Icon";
+import { WordView } from "@/components/WordView";
+import { Chip, RangeSlider } from "@/components/ui";
+import { MAX_WPM, MIN_WPM, WPM_STEP, clampWpm, wordDelayMs } from "@/lib/reader";
 import {
   DEFAULT_SETTINGS,
+  FONT_OPTIONS,
+  backgroundClass,
   loadSettings,
   saveSettings,
-  type ReadingFont,
+  type ReaderSettings,
 } from "@/lib/settings";
 
 interface ReaderClientProps {
   title: string;
+  author: string;
   words: string[];
   startIndex: number;
   isDemo: boolean;
@@ -30,22 +29,24 @@ interface ReaderClientProps {
  * Таймер — цепочка setTimeout: задержка считается под каждое слово,
  * а пауза просто останавливает цепочку.
  */
-export function ReaderClient({ title, words, startIndex, isDemo }: ReaderClientProps) {
+export function ReaderClient({ title, author, words, startIndex, isDemo }: ReaderClientProps) {
   const [index, setIndex] = useState(() => clampIndex(startIndex, words.length));
   const [playing, setPlaying] = useState(false);
-  const [wpm, setWpm] = useState(DEFAULT_SETTINGS.wpm);
-  const [font, setFont] = useState<ReadingFont>(DEFAULT_SETTINGS.font);
-  const [focusMode, setFocusMode] = useState(false);
+  const [settings, setSettings] = useState<ReaderSettings>(DEFAULT_SETTINGS);
+  /** Фокус, включённый кнопкой вручную */
+  const [manualFocus, setManualFocus] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
 
   const lastIndex = Math.max(words.length - 1, 0);
   const word = words[index] ?? "";
+  const wpm = settings.wpm;
+  // Панели прячутся, если фокус включён вручную или если в настройках включён режим фокуса и идёт чтение
+  const hideUi = manualFocus || (settings.focusMode && playing);
 
   // Читаем сохранённые настройки только в браузере
   useEffect(() => {
-    const saved = loadSettings();
-    setWpm(saved.wpm);
-    setFont(saved.font);
+    setSettings(loadSettings());
   }, []);
 
   // Таймер: показываем следующее слово через задержку, рассчитанную под текущее слово
@@ -64,21 +65,18 @@ export function ReaderClient({ title, words, startIndex, isDemo }: ReaderClientP
     return () => window.clearTimeout(timer);
   }, [playing, index, wpm, word, lastIndex, words.length]);
 
-  const changeSpeed = useCallback(
-    (next: number) => {
-      const clamped = clampWpm(next);
-      setWpm(clamped);
-      saveSettings({ wpm: clamped, font });
-    },
-    [font],
-  );
+  /** Меняет настройку и сразу сохраняет её в браузере */
+  const updateSettings = useCallback((patch: Partial<ReaderSettings>) => {
+    setSettings((prev) => {
+      const next = { ...prev, ...patch };
+      saveSettings(next);
+      return next;
+    });
+  }, []);
 
-  const changeFont = useCallback(
-    (next: ReadingFont) => {
-      setFont(next);
-      saveSettings({ wpm, font: next });
-    },
-    [wpm],
+  const changeSpeed = useCallback(
+    (next: number) => updateSettings({ wpm: clampWpm(next) }),
+    [updateSettings],
   );
 
   const seek = useCallback(
@@ -125,7 +123,8 @@ export function ReaderClient({ title, words, startIndex, isDemo }: ReaderClientP
           changeSpeed(wpm - WPM_STEP);
           break;
         case "Escape":
-          setFocusMode(false);
+          setManualFocus(false);
+          setPlaying(false);
           break;
       }
     }
@@ -168,129 +167,150 @@ export function ReaderClient({ title, words, startIndex, isDemo }: ReaderClientP
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-ink text-cream">
-      {/* Верхняя панель: скрыта в режиме фокуса */}
-      {focusMode ? null : (
-        <header className="flex items-center justify-between gap-3 px-4 py-4 sm:px-8">
+    <div className={`flex min-h-dvh flex-col text-cream transition-colors ${backgroundClass(settings.background)}`}>
+      {/* Верхняя панель */}
+      {hideUi ? null : (
+        <header className="flex items-center gap-3 px-4 py-4 sm:px-8">
           <Link
             href="/books"
-            className="rounded-lg px-2 py-1.5 text-sm text-cream-muted transition-colors hover:text-cream"
+            aria-label="Назад к книгам"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-cream-muted transition-colors hover:bg-white/5 hover:text-cream"
           >
-            ← Назад
+            <Icon name="back" />
           </Link>
-          <div className="flex min-w-0 items-center gap-2">
-            <p className="truncate text-sm font-medium text-cream">{title}</p>
-            {isDemo ? <DemoBadge /> : null}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <p className="truncate text-sm font-semibold text-cream">{title}</p>
+              {isDemo ? <DemoBadge /> : null}
+            </div>
+            <p className="truncate text-xs text-cream-muted">{author}</p>
           </div>
-          <div className="w-16" aria-hidden="true" />
+          <HeaderButton label={fullscreen ? "Свернуть" : "Во весь экран"} onClick={toggleFullscreen} icon="fullscreen" />
+          <HeaderButton
+            label={panelOpen ? "Скрыть настройки" : "Настройки чтения"}
+            onClick={() => setPanelOpen((value) => !value)}
+            icon="sliders"
+            active={panelOpen}
+          />
         </header>
       )}
 
-      {/* Центр: одно слово */}
-      <main className="flex flex-1 flex-col items-center justify-center px-4">
-        <WordView word={word} font={font} />
-        <p className="mt-10 text-xs tabular-nums text-cream-muted">
-          {index + 1} из {words.length} · {progressPercent}%
-        </p>
+      {/* Центр: одно слово. В режиме фокуса нажатие ставит на паузу. */}
+      <main
+        className="flex flex-1 flex-col items-center justify-center gap-6 px-4"
+        onClick={hideUi && playing ? togglePlay : undefined}
+      >
+        {hideUi ? null : <p className="text-xs text-cream-muted">Режим быстрого чтения</p>}
+        <WordView word={word} settings={settings} />
+        <span className="h-0.5 w-12 rounded-full bg-accent" aria-hidden="true" />
       </main>
 
-      {/* Нижняя панель управления: скрыта в режиме фокуса */}
-      {focusMode ? (
-        <div className="px-4 pb-6 sm:px-8">
-          <button
-            type="button"
-            onClick={() => setFocusMode(false)}
-            className="mx-auto block rounded-lg px-3 py-1.5 text-xs text-cream-muted hover:text-cream"
-          >
-            Выйти из фокуса (Esc)
-          </button>
+      {hideUi ? (
+        <div className="px-4 pb-6 text-center sm:px-8">
+          {manualFocus ? (
+            <button
+              type="button"
+              onClick={() => setManualFocus(false)}
+              className="rounded-lg px-3 py-1.5 text-xs text-cream-muted hover:text-cream"
+            >
+              Выйти из фокуса (Esc)
+            </button>
+          ) : (
+            <p className="text-xs text-cream-muted/60">Пробел или нажатие — пауза</p>
+          )}
         </div>
       ) : (
-        <footer className="flex flex-col gap-5 border-t border-white/5 bg-ink-deep/60 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-5 sm:px-8">
-          <div>
-            <label htmlFor="seek" className="sr-only">
-              Позиция в тексте
-            </label>
-            <input
-              id="seek"
-              type="range"
-              min={0}
-              max={lastIndex}
-              value={index}
-              onChange={(event) => {
-                setPlaying(false);
-                seek(Number(event.target.value));
+        <footer className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:px-8">
+          {settings.showProgress ? (
+            <div>
+              <div className="mb-2 flex justify-between text-xs tabular-nums text-cream-muted">
+                <span>
+                  {index + 1} / {words.length}
+                </span>
+                <span>{wpm} слов/мин</span>
+              </div>
+              <RangeSlider
+                label="Позиция в тексте"
+                min={0}
+                max={lastIndex}
+                value={index}
+                onChange={(value) => {
+                  setPlaying(false);
+                  seek(value);
+                }}
+              />
+            </div>
+          ) : null}
+
+          {/* Управление */}
+          <div className="flex items-center justify-center gap-5 sm:gap-8">
+            <ControlButton label="Пред." onClick={() => seek(index - 1)} icon="skipBack" />
+            <button
+              type="button"
+              onClick={togglePlay}
+              aria-label={playing ? "Пауза" : "Читать"}
+              className="flex h-16 w-16 items-center justify-center rounded-full bg-accent text-ink transition-transform hover:scale-[1.03] active:scale-95"
+            >
+              <Icon name={playing ? "pause" : "play"} className="h-7 w-7" />
+            </button>
+            <ControlButton label="След." onClick={() => seek(index + 1)} icon="skipForward" />
+          </div>
+
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={() => {
+                setManualFocus(true);
+                setPanelOpen(false);
               }}
-              className="w-full accent-accent"
-            />
+              className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2 text-xs font-medium text-cream-muted transition-colors hover:bg-white/5 hover:text-cream"
+            >
+              <Icon name="focus" className="h-4 w-4" />
+              Режим фокуса
+            </button>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <IconButton label="Назад на слово" onClick={() => seek(index - 1)}>
-                <IconPrev />
-              </IconButton>
-              <button
-                type="button"
-                onClick={togglePlay}
-                aria-label={playing ? "Пауза" : "Играть"}
-                className="flex h-14 w-14 items-center justify-center rounded-full bg-accent text-ink transition-transform hover:scale-[1.03] active:scale-95"
-              >
-                {playing ? <IconPause /> : <IconPlay />}
-              </button>
-              <IconButton label="Вперёд на слово" onClick={() => seek(index + 1)}>
-                <IconNext />
-              </IconButton>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => changeSpeed(wpm - WPM_STEP)}
-                disabled={wpm <= MIN_WPM}
-                aria-label="Медленнее"
-                className="h-10 w-10 rounded-xl border border-white/10 text-lg text-cream transition-colors hover:bg-white/5 disabled:opacity-40"
-              >
-                −
-              </button>
-              <span className="w-24 text-center text-sm font-semibold tabular-nums">
-                {wpm} сл/мин
-              </span>
-              <button
-                type="button"
-                onClick={() => changeSpeed(wpm + WPM_STEP)}
-                disabled={wpm >= MAX_WPM}
-                aria-label="Быстрее"
-                className="h-10 w-10 rounded-xl border border-white/10 text-lg text-cream transition-colors hover:bg-white/5 disabled:opacity-40"
-              >
-                +
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => changeFont(font === "sans" ? "serif" : "sans")}
-                className="h-10 rounded-xl border border-white/10 px-3 text-sm text-cream transition-colors hover:bg-white/5"
-              >
-                {font === "sans" ? "Aa засечки" : "Aa без засечек"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setFocusMode(true)}
-                className="h-10 rounded-xl border border-white/10 px-3 text-sm text-cream transition-colors hover:bg-white/5"
-              >
-                Фокус
-              </button>
-              <button
-                type="button"
-                onClick={toggleFullscreen}
-                className="h-10 rounded-xl border border-white/10 px-3 text-sm text-cream transition-colors hover:bg-white/5"
-              >
-                {fullscreen ? "Свернуть" : "Во весь экран"}
-              </button>
-            </div>
-          </div>
+          {/* Быстрые настройки прямо в читалке */}
+          {panelOpen ? (
+            <section aria-label="Настройки чтения" className="flex flex-col gap-5 rounded-2xl border border-white/10 bg-black/20 p-5">
+              <div>
+                <div className="mb-2 flex justify-between text-sm">
+                  <span className="text-cream">Скорость чтения</span>
+                  <span className="tabular-nums text-cream-muted">{wpm} слов/мин</span>
+                </div>
+                <RangeSlider
+                  label="Скорость, слов в минуту"
+                  min={MIN_WPM}
+                  max={MAX_WPM}
+                  step={WPM_STEP}
+                  value={wpm}
+                  onChange={changeSpeed}
+                />
+                <div className="mt-1 flex justify-between text-xs text-cream-muted">
+                  <span>{MIN_WPM}</span>
+                  <span>{MAX_WPM}</span>
+                </div>
+              </div>
+              <div>
+                <p className="mb-2 text-sm text-cream">Шрифт</p>
+                <div role="radiogroup" aria-label="Шрифт" className="grid grid-cols-3 gap-2">
+                  {FONT_OPTIONS.map((option) => (
+                    <Chip
+                      key={option.value}
+                      selected={settings.font === option.value}
+                      onClick={() => updateSettings({ font: option.value })}
+                      className={option.className}
+                    >
+                      {option.label}
+                    </Chip>
+                  ))}
+                </div>
+              </div>
+              <Link href="/settings" className="text-center text-xs text-cream-muted hover:text-cream">
+                Все настройки: цвета, фон, прогресс →
+              </Link>
+            </section>
+          ) : null}
 
           <p className="hidden text-center text-xs text-cream-muted/70 md:block">
             Пробел — пауза · ← → — слово · ↑ ↓ — скорость
@@ -298,8 +318,8 @@ export function ReaderClient({ title, words, startIndex, isDemo }: ReaderClientP
         </footer>
       )}
 
-      {/* Тонкая линия прогресса в режиме фокуса */}
-      {focusMode ? (
+      {/* Тонкая линия прогресса, когда панели скрыты */}
+      {hideUi && settings.showProgress ? (
         <div className="fixed inset-x-0 bottom-0 h-0.5 bg-white/5">
           <div className="h-full bg-accent transition-[width] duration-200" style={{ width: `${progressPercent}%` }} />
         </div>
@@ -308,49 +328,53 @@ export function ReaderClient({ title, words, startIndex, isDemo }: ReaderClientP
   );
 }
 
-/** Слово с выделенной буквой в центре. Левая и правая части выровнены, чтобы буква не «прыгала». */
-function WordView({ word, font }: { word: string; font: ReadingFont }) {
-  const pivot = pivotIndex(word);
-  const before = word.slice(0, pivot);
-  const focus = word.charAt(pivot);
-  const after = word.slice(pivot + 1);
-  const fontClass = font === "serif" ? "font-serif" : "font-sans";
-
-  return (
-    <div
-      className={`grid min-h-[7rem] w-full max-w-4xl grid-cols-[1fr_auto_1fr] items-center text-5xl font-medium leading-none sm:text-7xl md:text-8xl ${fontClass}`}
-      aria-label={word}
-    >
-      <span className="truncate text-right text-cream" aria-hidden="true">
-        {before}
-      </span>
-      <span className="text-accent" aria-hidden="true">
-        {focus}
-      </span>
-      <span className="truncate text-left text-cream" aria-hidden="true">
-        {after}
-      </span>
-    </div>
-  );
-}
-
-function IconButton({
+function HeaderButton({
   label,
   onClick,
-  children,
+  icon,
+  active,
 }: {
   label: string;
   onClick: () => void;
-  children: React.ReactNode;
+  icon: "fullscreen" | "sliders";
+  active?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-label={label}
-      className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 text-cream transition-colors hover:bg-white/5"
+      aria-pressed={active}
+      title={label}
+      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors hover:bg-white/5 ${
+        active ? "text-accent" : "text-cream-muted hover:text-cream"
+      }`}
     >
-      {children}
+      <Icon name={icon} />
+    </button>
+  );
+}
+
+function ControlButton({
+  label,
+  onClick,
+  icon,
+}: {
+  label: string;
+  onClick: () => void;
+  icon: "skipBack" | "skipForward";
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={icon === "skipBack" ? "Слово назад" : "Слово вперёд"}
+      className="flex flex-col items-center gap-1 text-cream-muted transition-colors hover:text-cream"
+    >
+      <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10">
+        <Icon name={icon} className="h-4 w-4" />
+      </span>
+      <span className="text-[11px]">{label}</span>
     </button>
   );
 }
@@ -360,37 +384,4 @@ function clampIndex(value: number, length: number): number {
     return 0;
   }
   return Math.min(Math.max(0, value), length - 1);
-}
-
-function IconPlay() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
-      <path d="M8 5.5v13l10-6.5z" fill="currentColor" />
-    </svg>
-  );
-}
-
-function IconPause() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
-      <rect x="6.5" y="5" width="3.8" height="14" rx="1" fill="currentColor" />
-      <rect x="13.7" y="5" width="3.8" height="14" rx="1" fill="currentColor" />
-    </svg>
-  );
-}
-
-function IconPrev() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-      <path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function IconNext() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-      <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
 }
