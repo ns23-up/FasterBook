@@ -1,4 +1,4 @@
-import { clampWpm } from "@/lib/reader";
+import { CHUNK_SIZES, clampWpm, type ChunkSize } from "@/lib/reader";
 
 /** Шрифты для слова в читалке. Сами шрифты подключаются в app/layout.tsx. */
 export type ReadingFont = "inter" | "manrope" | "roboto" | "montserrat" | "sfpro" | "playfair";
@@ -10,6 +10,8 @@ export type ReaderBackground = "ink" | "graphite" | "ink-deep" | "coal" | "night
 export interface ReaderSettings {
   /** Слов в минуту */
   wpm: number;
+  /** Сколько смысловых слов показывать за раз (предлоги и союзы всегда идут вместе со словом) */
+  chunkSize: ChunkSize;
   font: ReadingFont;
   textColor: TextColor;
   background: ReaderBackground;
@@ -21,6 +23,7 @@ export interface ReaderSettings {
 
 export const DEFAULT_SETTINGS: ReaderSettings = {
   wpm: 300,
+  chunkSize: 1,
   font: "inter",
   textColor: "cream",
   background: "ink",
@@ -84,6 +87,7 @@ export function loadSettings(): ReaderSettings {
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     return {
       wpm: clampWpm(Number(parsed.wpm)),
+      chunkSize: CHUNK_SIZES.find((size) => size === parsed.chunkSize) ?? DEFAULT_SETTINGS.chunkSize,
       font: parseFont(parsed.font),
       textColor: pick(parsed.textColor, TEXT_COLOR_OPTIONS, DEFAULT_SETTINGS.textColor),
       background: pick(parsed.background, BACKGROUND_OPTIONS, DEFAULT_SETTINGS.background),
