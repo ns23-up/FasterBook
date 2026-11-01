@@ -6,6 +6,9 @@ import { fontClass, textColorClass, type ReaderSettings } from "@/lib/settings";
  * Одно слово: стоит ровно по центру экрана, средняя буква подсвечена акцентом.
  * Несколько слов («и пришёл», «Анна вышла из дома»): фраза целиком по центру, без выделения.
  * Используется в читалке и в предпросмотре настроек.
+ *
+ * Размер шрифта постоянный: если он меняется от слова к слову, текст «дышит» и читать тяжелее.
+ * Уменьшаем только то, что иначе не поместится в ширину экрана.
  */
 export function WordView({
   word,
@@ -17,14 +20,11 @@ export function WordView({
   size?: "md" | "lg";
 }) {
   // lining-nums: ровные цифры. У Playfair по умолчанию «старинные» цифры, которые скачут по высоте.
-  const common = `w-full max-w-4xl font-semibold [font-variant-numeric:lining-nums] ${fontClass(settings.font)} ${textColorClass(settings.textColor)}`;
+  // overflow-wrap:anywhere: очень длинное слово переносится, а не вылезает за экран.
+  const className = `flex w-full max-w-4xl items-center justify-center text-center font-semibold leading-tight [font-variant-numeric:lining-nums] [overflow-wrap:anywhere] ${sizeClass(word.length, size)} ${fontClass(settings.font)} ${textColorClass(settings.textColor)}`;
 
   if (countWords(word) > 1) {
-    return (
-      <p className={`flex items-center justify-center text-center leading-tight ${phraseSizeClass(word.length, size)} ${common}`}>
-        {word}
-      </p>
-    );
+    return <p className={className}>{word}</p>;
   }
 
   const pivot = pivotIndex(word);
@@ -33,11 +33,9 @@ export function WordView({
   const after = word.slice(pivot + 1);
   // Если слово уже коралловое, выделяем букву кремовым, иначе её не будет видно
   const focusClass = settings.textColor === "accent" ? "text-cream" : "text-accent";
+
   return (
-    <p
-      className={`flex items-center justify-center text-center leading-none [overflow-wrap:anywhere] ${wordSizeClass(word.length, size)} ${common}`}
-      aria-label={word}
-    >
+    <p className={className} aria-label={word}>
       <span aria-hidden="true">
         {before}
         <span className={focusClass}>{focus}</span>
@@ -47,30 +45,19 @@ export function WordView({
   );
 }
 
-/** Длинное слово пишем мельче, чтобы оно целиком помещалось в ширину экрана */
-function wordSizeClass(length: number, size: "md" | "lg"): string {
+/**
+ * Обычный размер — для всего, что короче 15 символов (почти все слова и короткие фразы).
+ * Мельче — только для длинных слов и фраз, которые иначе не влезут в экран телефона.
+ */
+function sizeClass(length: number, size: "md" | "lg"): string {
   if (size === "md") {
-    return length > 10 ? "min-h-[4rem] text-3xl sm:text-4xl" : "min-h-[4rem] text-4xl sm:text-5xl";
-  }
-  if (length <= 9) {
-    return "min-h-[7rem] text-5xl sm:text-7xl md:text-8xl";
+    return length <= 14 ? "min-h-[4rem] text-3xl sm:text-4xl" : "min-h-[4rem] text-2xl sm:text-3xl";
   }
   if (length <= 14) {
     return "min-h-[7rem] text-4xl sm:text-6xl md:text-7xl";
   }
-  return "min-h-[7rem] text-3xl sm:text-5xl md:text-6xl";
-}
-
-/** Чем длиннее фраза, тем мельче шрифт: чтобы она помещалась в одну-две строки даже на телефоне */
-function phraseSizeClass(length: number, size: "md" | "lg"): string {
-  if (size === "md") {
-    return length > 14 ? "min-h-[4rem] text-2xl sm:text-3xl" : "min-h-[4rem] text-3xl sm:text-4xl";
+  if (length <= 22) {
+    return "min-h-[7rem] text-3xl sm:text-5xl md:text-6xl";
   }
-  if (length <= 12) {
-    return "min-h-[7rem] text-5xl sm:text-6xl md:text-7xl";
-  }
-  if (length <= 20) {
-    return "min-h-[7rem] text-4xl sm:text-5xl md:text-6xl";
-  }
-  return "min-h-[7rem] text-3xl sm:text-4xl md:text-5xl";
+  return "min-h-[7rem] text-2xl sm:text-4xl md:text-5xl";
 }

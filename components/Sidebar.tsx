@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BrandIcon } from "@/components/BrandIcon";
 import { Icon } from "@/components/Icon";
-import { Avatar } from "@/components/ui";
+import { SidebarAccount } from "@/components/auth/AccountMenu";
 import { NAV_ITEMS, isActivePath, type NavItem } from "@/lib/navigation";
 
 const MAIN_ITEMS = NAV_ITEMS.filter((item) => item.href !== "/settings");
@@ -34,17 +34,7 @@ export function Sidebar() {
           <SidebarLink item={SETTINGS_ITEM} active={isActivePath(pathname, SETTINGS_ITEM.href)} />
         ) : null}
 
-        {/* Аккаунтов пока нет, поэтому показываем гостя и ведём на экран входа */}
-        <Link
-          href="/welcome"
-          className="flex items-center gap-3 border-t border-white/5 px-2 pt-4 transition-colors hover:text-cream"
-        >
-          <Avatar name="Гость" />
-          <span className="min-w-0">
-            <span className="block text-sm font-medium text-cream">Гость</span>
-            <span className="block text-xs text-cream-muted">Без аккаунта</span>
-          </span>
-        </Link>
+        <SidebarAccount />
       </div>
     </aside>
   );

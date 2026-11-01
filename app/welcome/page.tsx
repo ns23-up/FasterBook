@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { BrandIcon } from "@/components/BrandIcon";
 import { SunsetBackdrop } from "@/components/SunsetBackdrop";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export const metadata = { title: "Добро пожаловать" };
 
 /**
- * Экран приветствия и входа.
- * Аккаунтов пока нет, поэтому «Создать аккаунт» и «Войти» выключены,
- * а «Продолжить без аккаунта» ведёт на главную.
+ * Экран приветствия.
+ * Если ключи Supabase заданы — кнопки ведут на регистрацию и вход;
+ * если нет — кнопки выключены. «Продолжить без аккаунта» работает всегда.
  */
 export default function WelcomePage() {
   return (
@@ -31,27 +32,44 @@ export default function WelcomePage() {
             Создайте аккаунт, чтобы ваша библиотека, закладки и настройки были на любом устройстве.
           </p>
 
-          <div className="mt-7 flex flex-col gap-3">
-            <button
-              type="button"
-              disabled
-              aria-describedby="auth-note"
-              className="rounded-xl bg-accent/40 py-3.5 text-sm font-semibold text-ink"
-            >
-              Создать аккаунт
-            </button>
-            <button
-              type="button"
-              disabled
-              aria-describedby="auth-note"
-              className="rounded-xl border border-white/15 py-3.5 text-sm font-medium text-cream/70"
-            >
-              Войти
-            </button>
-            <p id="auth-note" className="text-center text-xs text-cream/55">
-              Регистрация откроется позже. Пока Fasterbook работает без аккаунта.
-            </p>
-          </div>
+          {isSupabaseConfigured() ? (
+            <div className="mt-7 flex flex-col gap-3">
+              <Link
+                href="/register"
+                className="rounded-xl bg-accent py-3.5 text-center text-sm font-semibold text-ink transition-colors hover:bg-accent-hover"
+              >
+                Создать аккаунт
+              </Link>
+              <Link
+                href="/login"
+                className="rounded-xl border border-white/15 py-3.5 text-center text-sm font-medium text-cream transition-colors hover:bg-white/5"
+              >
+                Войти
+              </Link>
+            </div>
+          ) : (
+            <div className="mt-7 flex flex-col gap-3">
+              <button
+                type="button"
+                disabled
+                aria-describedby="auth-note"
+                className="rounded-xl bg-accent/40 py-3.5 text-sm font-semibold text-ink"
+              >
+                Создать аккаунт
+              </button>
+              <button
+                type="button"
+                disabled
+                aria-describedby="auth-note"
+                className="rounded-xl border border-white/15 py-3.5 text-sm font-medium text-cream/70"
+              >
+                Войти
+              </button>
+              <p id="auth-note" className="text-center text-xs text-cream/55">
+                Вход и регистрация пока не подключены. Fasterbook работает без аккаунта.
+              </p>
+            </div>
+          )}
 
           <div className="my-6 flex items-center gap-3 text-xs text-cream/40" aria-hidden="true">
             <span className="h-px flex-1 bg-white/10" />

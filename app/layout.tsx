@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import { AuthProvider } from "@/components/AuthProvider";
+import { PresencePing } from "@/components/PresencePing";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -32,7 +34,12 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="stylesheet" href={FONTS_URL} />
       </head>
-      <body>{children}</body>
+      <body>
+        <AuthProvider>
+          <PresencePing />
+          {children}
+        </AuthProvider>
+      </body>
     </html>
   );
 }

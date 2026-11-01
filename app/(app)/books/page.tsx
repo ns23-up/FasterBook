@@ -1,5 +1,4 @@
 import { BooksClient } from "@/components/BooksClient";
-import { DEMO_BOOKS } from "@/lib/demo-data";
 
 export const metadata = { title: "Мои книги" };
 
@@ -13,5 +12,5 @@ export default async function BooksPage({ searchParams }: BooksPageProps) {
   const initialQuery = typeof q === "string" ? q : "";
 
   // key сбрасывает поле поиска, когда запрос в адресе меняется
-  return <BooksClient key={initialQuery} books={DEMO_BOOKS} initialQuery={initialQuery} />;
+  return <BooksClient key={initialQuery} initialQuery={initialQuery} />;
 }

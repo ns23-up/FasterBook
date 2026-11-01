@@ -1,4 +1,3 @@
-import { DemoBadge } from "@/components/DemoBadge";
 import { Icon, type IconName } from "@/components/Icon";
 
 /**
@@ -16,25 +15,12 @@ export const panelClass = "rounded-2xl border border-white/5 bg-ink-deep/70";
 export const cardClass =
   "rounded-2xl border border-white/[0.07] bg-ink-deep/80 shadow-[0_14px_30px_-18px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.05)]";
 
-export function SectionTitle({
-  id,
-  title,
-  badge,
-  action,
-}: {
-  id?: string;
-  title: string;
-  badge?: boolean;
-  action?: React.ReactNode;
-}) {
+export function SectionTitle({ id, title, action }: { id?: string; title: string; action?: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <div className="flex items-center gap-3">
-        <h2 id={id} className="text-lg font-semibold tracking-tight text-cream">
-          {title}
-        </h2>
-        {badge ? <DemoBadge /> : null}
-      </div>
+      <h2 id={id} className="text-lg font-semibold tracking-tight text-cream">
+        {title}
+      </h2>
       {action}
     </div>
   );

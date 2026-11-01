@@ -21,6 +21,23 @@ export interface StoredBook {
   position: number;
   addedAt: number;
   updatedAt: number;
+  /** id копии в аккаунте: книга уже перенесена и ждёт удаления из браузера. Такие книги не показываются. */
+  movedTo?: string;
+  /** Книга в «Любимых» */
+  favorite?: boolean;
+}
+
+/**
+ * Что нужно, чтобы добавить книгу. position — если переносим уже начатую книгу.
+ * id — если у книги уже есть постоянный id (при переносе из браузера): повтор с тем же id не создаст дубль.
+ */
+export interface NewBook {
+  id?: string;
+  title: string;
+  author: string;
+  text: string;
+  wordCount: number;
+  position?: number;
 }
 
 const DB_NAME = "fasterbook";
@@ -80,7 +97,36 @@ function done(transaction: IDBTransaction): Promise<void> {
 export async function listBooks(): Promise<StoredBook[]> {
   const db = await openDb();
   const books = await wrap(db.transaction(BOOKS).objectStore(BOOKS).getAll() as IDBRequest<StoredBook[]>);
-  return books.sort((a, b) => b.updatedAt - a.updatedAt);
+  return books.filter((book) => !book.movedTo).sort((a, b) => b.updatedAt - a.updatedAt);
+}
+
+/** Ставит пометку «перенесена в аккаунт». Саму книгу не удаляет. */
+export async function markMoved(id: string, cloudId: string): Promise<void> {
+  const db = await openDb();
+  const transaction = db.transaction(BOOKS, "readwrite");
+  const store = transaction.objectStore(BOOKS);
+  const book = await wrap(store.get(id) as IDBRequest<StoredBook | undefined>);
+  if (book) {
+    store.put({ ...book, movedTo: cloudId });
+  }
+  await done(transaction);
+}
+
+/** Удаляет книги с пометкой «перенесена»: их копия уже в аккаунте. Возвращает, сколько удалено. */
+export async function purgeMovedBooks(): Promise<number> {
+  const db = await openDb();
+  const all = await wrap(db.transaction(BOOKS).objectStore(BOOKS).getAll() as IDBRequest<StoredBook[]>);
+  const moved = all.filter((book) => book.movedTo);
+  if (moved.length === 0) {
+    return 0;
+  }
+  const transaction = db.transaction([BOOKS, TEXTS], "readwrite");
+  for (const book of moved) {
+    transaction.objectStore(BOOKS).delete(book.id);
+    transaction.objectStore(TEXTS).delete(book.id);
+  }
+  await done(transaction);
+  return moved.length;
 }
 
 /** Книга вместе с текстом, или null, если такой нет */
@@ -97,7 +143,7 @@ export async function getBook(id: string): Promise<{ book: StoredBook; text: str
   return { book, text };
 }
 
-export async function addBook(input: { title: string; author: string; text: string; wordCount: number }): Promise<StoredBook> {
+export async function addBook(input: NewBook): Promise<StoredBook> {
   const db = await openDb();
   const now = Date.now();
   const book: StoredBook = {
@@ -105,7 +151,7 @@ export async function addBook(input: { title: string; author: string; text: stri
     title: input.title,
     author: input.author,
     wordCount: input.wordCount,
-    position: 0,
+    position: input.position ?? 0,
     addedAt: now,
     updatedAt: now,
   };
@@ -133,6 +179,18 @@ export async function savePosition(id: string, position: number): Promise<void> 
   const book = await wrap(store.get(id) as IDBRequest<StoredBook | undefined>);
   if (book) {
     store.put({ ...book, position, updatedAt: Date.now() });
+  }
+  await done(transaction);
+}
+
+/** Добавляет книгу в «Любимые» или убирает. Порядок «Недавние» не меняется. */
+export async function setFavorite(id: string, favorite: boolean): Promise<void> {
+  const db = await openDb();
+  const transaction = db.transaction(BOOKS, "readwrite");
+  const store = transaction.objectStore(BOOKS);
+  const book = await wrap(store.get(id) as IDBRequest<StoredBook | undefined>);
+  if (book) {
+    store.put({ ...book, favorite });
   }
   await done(transaction);
 }

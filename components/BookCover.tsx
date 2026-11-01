@@ -1,4 +1,5 @@
-import type { CoverTone } from "@/lib/demo-data";
+/** Цвет обложки-заглушки */
+export type CoverTone = "accent" | "graphite" | "cream";
 
 const TONE_CLASSES: Record<CoverTone, string> = {
   accent: "bg-cover-ember text-accent",

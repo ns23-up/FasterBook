@@ -31,6 +31,8 @@ const ICONS = {
   fullscreen: "M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5",
   sliders: "M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4",
   check: "M5 12l5 5 9-10",
+  flame:
+    "M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z",
   focus: "M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3M12 12h.01",
   sort: "M7 4v16M4 7l3-3 3 3M17 20V4M14 17l3 3 3-3",
   palette:
@@ -41,6 +43,7 @@ const ICONS = {
 const FILLED = {
   play: "M8 5.5v13l10-6.5z",
   pause: "M7 5h3.5v14H7zM13.5 5H17v14h-3.5z",
+  heartFilled: "M12 20s-7-4.5-7-10a4 4 0 017-2.5A4 4 0 0119 10c0 5.5-7 10-7 10z",
 } as const;
 
 export type IconName = keyof typeof ICONS | keyof typeof FILLED;

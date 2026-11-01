@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { BrandIcon } from "@/components/BrandIcon";
 import { Icon } from "@/components/Icon";
-import { Avatar } from "@/components/ui";
+import { TopBarAccount } from "@/components/auth/AccountMenu";
 
 /**
  * Верхняя панель.
@@ -52,9 +52,7 @@ export function TopBar() {
             <Icon name="bell" />
             <span className="sr-only">Уведомлений пока нет</span>
           </span>
-          <Link href="/welcome" aria-label="Профиль: гость" className="rounded-full">
-            <Avatar name="Гость" size="sm" />
-          </Link>
+          <TopBarAccount />
         </div>
       </div>
     </header>

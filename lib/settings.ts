@@ -6,6 +6,13 @@ export type ReadingFont = "inter" | "manrope" | "roboto" | "montserrat" | "sfpro
 export type TextColor = "cream" | "accent" | "mist" | "snow";
 /** Фон читалки */
 export type ReaderBackground = "ink" | "graphite" | "ink-deep" | "coal" | "night";
+/** Режим читалки: скорочтение (слово за словом) или весь текст, как в обычной электронной книге */
+export type ReadMode = "speed" | "page";
+
+/** Размер шрифта в режиме «Читать целиком», в пикселях */
+export const PAGE_FONT_MIN = 14;
+export const PAGE_FONT_MAX = 30;
+export const PAGE_FONT_STEP = 2;
 
 export interface ReaderSettings {
   /** Слов в минуту */
@@ -19,6 +26,10 @@ export interface ReaderSettings {
   showProgress: boolean;
   /** Режим фокуса: во время чтения панели прячутся */
   focusMode: boolean;
+  /** Какой режим открывать в читалке */
+  readMode: ReadMode;
+  /** Размер шрифта в режиме «Читать целиком» */
+  pageFontSize: number;
 }
 
 export const DEFAULT_SETTINGS: ReaderSettings = {
@@ -29,7 +40,18 @@ export const DEFAULT_SETTINGS: ReaderSettings = {
   background: "ink",
   showProgress: true,
   focusMode: true,
+  readMode: "speed",
+  pageFontSize: 18,
 };
+
+/** Размер шрифта в допустимых пределах, кратный шагу */
+export function clampPageFontSize(value: number): number {
+  if (!Number.isFinite(value)) {
+    return DEFAULT_SETTINGS.pageFontSize;
+  }
+  const stepped = Math.round(value / PAGE_FONT_STEP) * PAGE_FONT_STEP;
+  return Math.min(PAGE_FONT_MAX, Math.max(PAGE_FONT_MIN, stepped));
+}
 
 /**
  * Варианты для экранов настроек. Классы написаны полностью (а не склеены из кусочков),
@@ -93,6 +115,8 @@ export function loadSettings(): ReaderSettings {
       background: pick(parsed.background, BACKGROUND_OPTIONS, DEFAULT_SETTINGS.background),
       showProgress: typeof parsed.showProgress === "boolean" ? parsed.showProgress : DEFAULT_SETTINGS.showProgress,
       focusMode: typeof parsed.focusMode === "boolean" ? parsed.focusMode : DEFAULT_SETTINGS.focusMode,
+      readMode: parsed.readMode === "page" ? "page" : "speed",
+      pageFontSize: parsed.pageFontSize === undefined ? DEFAULT_SETTINGS.pageFontSize : clampPageFontSize(Number(parsed.pageFontSize)),
     };
   } catch {
     // Хранилище может быть недоступно (приватный режим, заблокированные данные сайта)
